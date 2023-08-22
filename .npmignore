@@ -1,6 +1,6 @@
 src/**/__tests__
-.eslintignire
-.selintrc.js
+.eslintignore
+.eslintrc.js
 .prettierignore
 .prettierrc.js
 .tool-versions
