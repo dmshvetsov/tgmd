@@ -1,0 +1,7 @@
+src/**/__tests__
+.eslintignire
+.selintrc.js
+.prettierignore
+.prettierrc.js
+.tool-versions
+jest.config.js
