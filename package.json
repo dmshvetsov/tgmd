@@ -5,7 +5,6 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "start:dev": "concurrently -k -p \"[{name}]\" -n \"TS--,Node\" -c \"cyan,green\" \"tsc -w\" \"nodemon dist/index.js\"",
     "build": "tsc",
     "test": "vitest"
   },
@@ -17,11 +16,9 @@
   "license": "ISC",
   "homepage": "https://github.com/dmshvetsov/tgmd#README",
   "devDependencies": {
-    "@types/jest": "^29.5.3",
     "@types/node": "^20.4.2",
     "@typescript-eslint/eslint-plugin": "6.1.0",
     "@typescript-eslint/parser": "6.1.0",
-    "concurrently": "^8.2.0",
     "eslint": "^8.45.0",
     "eslint-config-prettier": "^8.8.0",
     "eslint-config-standard": "^17.1.0",
@@ -29,7 +26,6 @@
     "eslint-plugin-n": "^16.0.1",
     "eslint-plugin-prettier": "^4.0.0",
     "eslint-plugin-promise": "^6.1.1",
-    "nodemon": "^3.0.1",
     "prettier": "2.8.8",
     "typescript": "^5.1.6",
     "vitest": "^0.34.2"
