@@ -6,7 +6,8 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "build": "tsc",
-    "test": "vitest"
+    "test": "vitest",
+    "preversion": "pnpm run build && git add ./dist"
   },
   "repository": {
     "type": "git",
