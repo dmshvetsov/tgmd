@@ -1,3 +1,7 @@
+import remarkParse from 'remark-parse'
+import remarkStrigify from 'remark-stringify'
+import { unified } from 'unified'
+
 /*
     *bold \*text*
     _italic \*text_
@@ -46,19 +50,6 @@ const REQUIRE_ESCAPE = Object.freeze(
   ])
 )
 
-type ReplacerFn = (s: string, cursor: number) => [string, number]
-
-const CHAR = Object.freeze({
-  NEWLINE: 10
-})
-
-const REPLACERS = Object.freeze(
-  new Map<string, ReplacerFn>([
-    ['*', handldeAsterisk],
-    ['_', handldeUnderscore]
-  ])
-)
-
 // function isSequence(s: string, idx: number) {
 //   const cur = s[idx]
 //   const prev = s[idx - 1]
@@ -70,31 +61,77 @@ const REPLACERS = Object.freeze(
 //   return (cur === '*' || cur === '_') && (cur === prev || cur === next)
 // }
 
-function isAlphanumeric(s: string, idx: number) {
-  const code = s.charCodeAt(idx)
-  if (isNaN(code)) {
-    return false
-  }
+// function isAlphanumeric(s: string, idx: number) {
+//   const code = s.charCodeAt(idx)
+//   if (isNaN(code)) {
+//     return false
+//   }
+//
+//   if (
+//     !(code > 47 && code < 58) && // numeric (0-9)
+//     !(code > 64 && code < 91) && // upper alpha (A-Z)
+//     !(code > 96 && code < 123) // lower alpha (a-z)
+//   ) {
+//     return false
+//   }
+//   return true
+// }
 
-  if (
-    !(code > 47 && code < 58) && // numeric (0-9)
-    !(code > 64 && code < 91) && // upper alpha (A-Z)
-    !(code > 96 && code < 123) // lower alpha (a-z)
-  ) {
-    return false
-  }
-  return true
-}
+// function isSpace(s: string, idx: number) {
+//   const code = s.charCodeAt(idx)
+//   return code === 32
+// }
 
-function isSpace(s: string, idx: number) {
-  const code = s.charCodeAt(idx)
-  return code === 32
-}
+// function isSpaceLineEdge(s: string, idx: number) {
+//   const code = s.charCodeAt(idx)
+//   return isNaN(code) || code === CHAR.NEWLINE || isSpace(s, idx)
+// }
 
-function isSpaceLineEdge(s: string, idx: number) {
-  const code = s.charCodeAt(idx)
-  return isNaN(code) || code === CHAR.NEWLINE || isSpace(s, idx)
-}
+// function handldeAsterisk(s: string, cursor: number): [string, number] {
+//   if (isAlphanumeric(s, cursor + 1) && isSpaceLineEdge(s, cursor - 1)) {
+//     // \s*\w transfor to \s_\w
+//     // \n*\w transfor to \n_\w
+//     return [s.slice(0, cursor) + '_' + s.slice(cursor + 1), cursor + 1]
+//   }
+//   if (isAlphanumeric(s, cursor - 1) && isSpaceLineEdge(s, cursor + 1)) {
+//     // \w*\s transform to \w_\s
+//     // \w*\n transform to \w_\n
+//     return [s.slice(0, cursor) + '_' + s.slice(cursor + 1), cursor + 1]
+//   }
+//
+//   if (s[cursor - 1] === '*' && isAlphanumeric(s, cursor + 1)) {
+//     // **\w transformation to *\w
+//     return [s.slice(0, cursor) + s.slice(cursor + 1), cursor + 2]
+//   }
+//   if (s[cursor + 1] === '*' && isAlphanumeric(s, cursor - 1)) {
+//     // \w**\s transformation to \w*\s
+//     return [s.slice(0, cursor) + s.slice(cursor + 1), cursor + 2]
+//   }
+//
+//   return [s, cursor + 1]
+// }
+
+// function handldeUnderscore(s: string, cursor: number): [string, number] {
+//   if (isAlphanumeric(s, cursor - 1) && isSpaceLineEdge(s, cursor - 1)) {
+//     // \s_\w keep as \s_\w
+//     // \n_\w keep as \n_\w
+//     return [s, cursor + 1]
+//   }
+//   if (isAlphanumeric(s, cursor - 1) && isSpaceLineEdge(s, cursor + 1)) {
+//     // \w_\s keep as \w_\s
+//     // \w_\n keep as \w_\n
+//     return [s, cursor + 1]
+//   }
+//   if (s[cursor - 1] === '_' && isAlphanumeric(s, cursor + 1)) {
+//     // __\w transformation to *\w
+//     return [s.slice(0, cursor - 1) + '*' + s.slice(cursor + 1), cursor + 1]
+//   }
+//   if (s[cursor + 1] === '_' && isAlphanumeric(s, cursor - 1)) {
+//     // \w__ transformation to \w*
+//     return [s.slice(0, cursor) + '*' + s.slice(cursor + 2), cursor + 1]
+//   }
+//   return [s, cursor + 1]
+// }
 
 function handleRequiresEscape(s: string, cursor: number): [string, number] {
   if (REQUIRE_ESCAPE.has(s[cursor])) {
@@ -103,71 +140,78 @@ function handleRequiresEscape(s: string, cursor: number): [string, number] {
   return [s, cursor]
 }
 
-function handldeAsterisk(s: string, cursor: number): [string, number] {
-  if (isAlphanumeric(s, cursor + 1) && isSpaceLineEdge(s, cursor - 1)) {
-    // \s*\w transfor to \s_\w
-    // \n*\w transfor to \n_\w
-    return [s.slice(0, cursor) + '_' + s.slice(cursor + 1), cursor + 1]
-  }
-  if (isAlphanumeric(s, cursor - 1) && isSpaceLineEdge(s, cursor + 1)) {
-    // \w*\s transform to \w_\s
-    // \w*\n transform to \w_\n
-    return [s.slice(0, cursor) + '_' + s.slice(cursor + 1), cursor + 1]
-  }
-
-  if (s[cursor - 1] === '*' && isAlphanumeric(s, cursor + 1)) {
-    // **\w transformation to *\w
-    return [s.slice(0, cursor) + s.slice(cursor + 1), cursor + 2]
-  }
-  if (s[cursor + 1] === '*' && isAlphanumeric(s, cursor - 1)) {
-    // \w**\s transformation to \w*\s
-    return [s.slice(0, cursor) + s.slice(cursor + 1), cursor + 2]
-  }
-
-  return [s, cursor + 1]
+function strong(node: any, _: any, state: any, info: any) {
+  const marker = '*'
+  const exit = state.enter('strong')
+  const tracker = state.createTracker(info)
+  let value = tracker.move(marker)
+  value += tracker.move(
+    state.containerPhrasing(node, {
+      before: value,
+      after: marker,
+      ...tracker.current()
+    })
+  )
+  value += tracker.move(marker)
+  exit()
+  return value
 }
 
-function handldeUnderscore(s: string, cursor: number): [string, number] {
-  if (isAlphanumeric(s, cursor - 1) && isSpaceLineEdge(s, cursor - 1)) {
-    // \s_\w keep as \s_\w
-    // \n_\w keep as \n_\w
-    return [s, cursor + 1]
-  }
-  if (isAlphanumeric(s, cursor - 1) && isSpaceLineEdge(s, cursor + 1)) {
-    // \w_\s keep as \w_\s
-    // \w_\n keep as \w_\n
-    return [s, cursor + 1]
-  }
-  if (s[cursor - 1] === '_' && isAlphanumeric(s, cursor + 1)) {
-    // __\w transformation to *\w
-    return [s.slice(0, cursor - 1) + '*' + s.slice(cursor + 1), cursor + 1]
-  }
-  if (s[cursor + 1] === '_' && isAlphanumeric(s, cursor - 1)) {
-    // \w__ transformation to \w*
-    return [s.slice(0, cursor) + '*' + s.slice(cursor + 2), cursor + 1]
-  }
-  return [s, cursor + 1]
+strong.peek = strongPeek
+
+/**
+ * @param {Strong} _
+ * @param {Parents | undefined} _1
+ * @param {State} state
+ * @returns {string}
+ */
+function strongPeek(_: any, _1: any, state: any) {
+  return state.options.strong || '*'
+}
+
+function emphasis(node: any, _: any, state: any, info: any) {
+  const exit = state.enter('emphasis')
+  const tracker = state.createTracker(info)
+  let value = tracker.move('_')
+  value += tracker.move(
+    state.containerPhrasing(node, {
+      before: value,
+      after: '_',
+      ...tracker.current()
+    })
+  )
+  value += tracker.move('_')
+  exit()
+  return value
+}
+
+emphasis.peek = emphasisPeek
+
+function emphasisPeek(_: any, _1: any, state: any) {
+  return state.options.emphasis || '*'
+}
+
+export function remarkTranspile(s: string): string {
+  const file = unified()
+    .use(remarkParse)
+    .use(remarkStrigify, {
+      handlers: {
+        strong,
+        emphasis
+      }
+    })
+    .processSync(s)
+  return String(file)
 }
 
 export function transpile(s: string): string {
-  let res = s.slice(0)
+  let res = remarkTranspile(s)
+  // let res = s.slice(0)
   let cursor = 0
   while (cursor < res.length) {
-    const c = res[cursor]
-    const replacer = REPLACERS.get(c)
-    if (replacer) {
-      // console.debug('input:', res, cursor)
-      const [newRes, newCursor] = handleRequiresEscape(...replacer(res, cursor))
-      res = newRes
-      // console.debug('output:', res, cursor)
-      cursor = newCursor
-    } else {
-      // console.debug('input:', res, cursor)
-      const [newRes, newCursor] = handleRequiresEscape(res, cursor)
-      res = newRes
-      // console.debug('output:', res, cursor)
-      cursor = newCursor + 1
-    }
+    const [newRes, newCursor] = handleRequiresEscape(res, cursor)
+    res = newRes
+    cursor = newCursor + 1
   }
   return res
 }
