@@ -134,7 +134,7 @@ const REQUIRE_ESCAPE = Object.freeze(
 // }
 
 function handleRequiresEscape(s: string, cursor: number): [string, number] {
-  if (REQUIRE_ESCAPE.has(s[cursor])) {
+  if (REQUIRE_ESCAPE.has(s[cursor]) && s[cursor - 1] !== '\\') {
     return [s.slice(0, cursor) + '\\' + s.slice(cursor), cursor + 1]
   }
   return [s, cursor]

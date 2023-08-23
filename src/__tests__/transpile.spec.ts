@@ -55,7 +55,9 @@ it(`escapes '`, () => {
 })
 
 it('transpiles complex strings', () => {
-  expect(transpile(`hello, **my friend!!**!!`)).toBe(`hello, *my friend\\!\\!*\\!\\!\n`)
+  expect(transpile(`hello, **my friend!!**!!\n\n[that's was a test]`)).toBe(
+    `hello, *my friend\\!\\!*\\!\\!\n\n\\[that's was a test\\]\n`
+  )
 })
 
 it('does not modify original string', () => {
